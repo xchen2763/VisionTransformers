@@ -48,5 +48,5 @@ ViT with RoPE and Performer mechanism is implemented in `models_v2_performer_rop
 ### Training
 
 ```bash
-python main.py --model deit_small_patch8_LS --data-set CIFAR10 --data-path data --output_dir output --batch-size 512 --epochs 400 --input-size 32 --lr 1e-4 --unscale-lr --repeated-aug
+python main.py --model deit_small_patch8_LS --data-set MNIST --data-path data --output_dir output/MNIST --batch-size 512 --epochs 400 --input-size 28 --lr 1e-4 --unscale-lr --repeated-aug
 ```
