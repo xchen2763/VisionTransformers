@@ -1,7 +1,8 @@
-<img width="609" alt="image" src="https://github.com/user-attachments/assets/50d5cdcc-8a60-41f1-a362-908250fc1390" />
-
 # VisionTransformers
 Repository for Columbia University course projects IEOR 6617 and IEOR 4540
+
+# IEOR 4540 Project Description
+<img width="609" alt="image" src="https://github.com/user-attachments/assets/50d5cdcc-8a60-41f1-a362-908250fc1390" />
 
 # Rotary Positional Encodings for ViT and Performer -- code
 
