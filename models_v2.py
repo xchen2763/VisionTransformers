@@ -12,7 +12,7 @@ from timm.models.registry import register_model
 
 class Attention(nn.Module):
     # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
-    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., seq_len=784):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -22,8 +22,6 @@ class Attention(nn.Module):
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
-
-        self.rpe = nn.Parameter(torch.zeros(2 * seq_len + 1))
 
     def forward(self, x):
         B, N, C = x.shape
@@ -62,7 +60,43 @@ class AddRPEAttention(Attention):
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
+
+class PolyRPEAttention(Attention):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., grid_size=(8, 8), poly_deg=3):
+        super().__init__(dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.)
+        
+        self.poly_deg = poly_deg
+        self.poly_coeffs = nn.Parameter(torch.randn(num_heads, poly_deg + 1))
+
+        self.height, self.width = grid_size
+        # generate patch coordinates from (0, 0) to (height - 1, width - 1), shape is (H*W, 2)
+        coords = torch.stack(torch.meshgrid(torch.arange(self.height), torch.arange(self.width), indexing='ij'), dim=-1).reshape(-1, 2)
+        # calculate L1-distance between each pair of patches, shape is (H*W, H*W)
+        dists = torch.cdist(coords.float(), coords.float(), p=1)
+        # polynomial power terms, shape is (poly_deg+1, H*W, H*W)
+        self.powers = torch.stack([dists ** i for i in range(poly_deg + 1)], dim=0)
     
+    def forward(self, x):
+        B, N, C = x.shape
+        (H, W) = self.grid_size
+        assert N == H * W + 1  # Sequence length is height * width + 1 extra class token
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        q = q * self.scale
+        
+        rpe = torch.einsum("hd, dxy -> hxy", self.poly_coeffs, self.powers)  # RPE shape is (num_heads, H*W, H*W)
+        rpe = nn.functional.pad(rpe, pad=(1, 0, 1, 0), mode='constant', value=0)  # Add pad to cover the class token, new shape is (num_heads, N, N)
+
+        attn = (q @ k.transpose(-2, -1))
+        attn = attn + rpe.unsqueeze(0)  # add RPE to attention matrix
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+        
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
 class Block(nn.Module):
     # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
