@@ -12,7 +12,7 @@ from timm.models.registry import register_model
 
 class Attention(nn.Module):
     # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
-    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., **kwargs):
+    def __init__(self, dim, num_heads=6, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., **kwargs):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -39,22 +39,33 @@ class Attention(nn.Module):
         x = self.proj_drop(x)
         return x
     
-class AddRPEAttention(Attention):
+class RegRPEAttention(Attention):
+    def __init__(self, dim, num_heads=6, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., num_patches=64, **kwargs):
+        super().__init__(dim, num_heads, qkv_bias, qk_scale, attn_drop, proj_drop, **kwargs)
+
+        self.num_patches = num_patches
+        self.learnable = nn.Parameter(torch.randn(num_heads, 2 * num_patches - 1))
+
+        pos_mat = torch.arange(num_patches).unsqueeze(1) - torch.arange(num_patches).unsqueeze(0) + num_patches - 1
+        self.pos_mat = pos_mat.unsqueeze(0).expand(num_heads, -1, -1)  # shape: (num_heads, num_patches, num_patches)
+
+        self.head_indices = torch.arange(num_heads).view(num_heads, 1, 1).expand(-1, num_patches, num_patches)
+
     def forward(self, x):
         B, N, C = x.shape
+        assert N == self.num_patches + 1
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
         
         q = q * self.scale
 
+        rpe = self.learnable[self.head_indices, self.pos_mat]  # shape: (num_heads, num_patches, num_patches)
+        rpe = nn.functional.pad(rpe, pad=(1, 0, 1, 0), mode='constant', value=0)  # Add pad to cover the class token, new shape is (num_heads, N, N)
+
         attn = (q @ k.transpose(-2, -1))
+        attn = attn + rpe.unsqueeze(0)  # add RPE to attention matrix
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
-
-        pos_mat = torch.arange(N).unsqueeze(1) - torch.arange(N).unsqueeze(0)  # (L, L)
-        pos_mat += N - 1  # shift to 0-based index for lookup
-        rpe = self.rpe[pos_mat]
-        attn = attn + rpe
 
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
@@ -103,12 +114,12 @@ class Layer_scale_init_Block(nn.Module):
     # with slight modifications
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm,Attention_block = Attention,Mlp_block=Mlp
-                 ,init_values=1e-4, grid_size=None, poly_deg=None):
+                 ,init_values=1e-4, num_patches=None, grid_size=None, poly_deg=None):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention_block(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop,
-            grid_size=grid_size, poly_deg=poly_deg)
+            num_patches=num_patches, grid_size=grid_size, poly_deg=poly_deg)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -158,7 +169,7 @@ class vit_models(nn.Module):
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
                 drop=0.0, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
                 act_layer=act_layer,Attention_block=Attention_block,Mlp_block=Mlp_block,init_values=init_scale,
-                grid_size=grid_size, poly_deg=poly_deg)
+                num_patches=num_patches, grid_size=grid_size, poly_deg=poly_deg)
             for i in range(depth)])
         
 
@@ -223,30 +234,23 @@ class vit_models(nn.Module):
         return x
 
 
-@register_model
-def deit_small_patch8_LS(img_size=224, **kwargs):
+@register_model  # ViT model with APE only
+def vit_ape(img_size=32, **kwargs):
     model = vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=Layer_scale_init_Block, **kwargs)
     return model
 
-@register_model
-def deit_base_patch8_LS(img_size=224, **kwargs):
+@register_model  # ViT model with APE and regular additive RPE
+def vit_ape_reg_rpe(img_size=32, **kwargs):
     model = vit_models(
-        img_size = img_size, patch_size=8, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=Layer_scale_init_Block, **kwargs)
-    return model
-
-@register_model
-def deit_small_patch8_add_rpe(img_size=224, **kwargs):
-    model = vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=Layer_scale_init_Block, 
-        Attention_block=AddRPEAttention, **kwargs)
+        Attention_block=RegRPEAttention, **kwargs)
     return model
 
-@register_model
-def vit_small_poly_deg(img_size=32, **kwargs):
+@register_model  # ViT model with APE and polynomial additive RPE
+def vit_ape_poly_rpe(img_size=32, **kwargs):
     model = vit_models(
         img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=Layer_scale_init_Block,
