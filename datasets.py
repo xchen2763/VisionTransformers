@@ -83,6 +83,31 @@ def build_dataset(is_train, args):
 
 def build_transform(is_train, args):
     resize_im = args.input_size > 32
+    
+    if args.data_set == 'MNIST':
+        norm_mean = IMAGENET_DEFAULT_MEAN
+        norm_std = IMAGENET_DEFAULT_STD
+
+        base_transform = transforms.Compose([
+            transforms.Lambda(lambda img: img.convert("RGB")),        
+            transforms.ToTensor(),
+            transforms.Normalize(norm_mean, norm_std)
+        ])
+
+        if is_train:
+            return transforms.Compose([
+                transforms.RandomCrop(args.input_size, padding=4),
+                base_transform
+            ])
+        else:
+            t = []
+            if resize_im:
+                size = int(args.input_size / args.eval_crop_ratio)
+                t.append(transforms.Resize(size, interpolation=3))
+                t.append(transforms.CenterCrop(args.input_size))
+            t.append(base_transform)
+            return transforms.Compose(t)
+            
     if is_train:
         # this should always dispatch to transforms_imagenet_train
         transform = create_transform(
