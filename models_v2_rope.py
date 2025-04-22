@@ -280,3 +280,20 @@ def rope_mixed_ape_deit_base_patch8_LS(pretrained=False, img_size=224, pretraine
         norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
         rope_theta=10.0, rope_mixed=True, use_ape=True, **kwargs)
     return model
+
+# New models
+@register_model
+def vit_ape_axial_rope(img_size=32, **kwargs):
+    model = rope_vit_models(
+        img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
+        rope_theta=100.0, rope_mixed=False, use_ape=True, **kwargs)
+    return model
+
+@register_model
+def vit_ape_mixed_rope(img_size=32, **kwargs):
+    model = rope_vit_models(
+        img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
+        rope_theta=10.0, rope_mixed=True, use_ape=True, **kwargs)
+    return model

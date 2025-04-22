@@ -11,9 +11,12 @@ and [Performer](https://github.com/google-research/google-research/tree/master/p
 
 Regular ViT with absolute positional embedding (APE) is implemented in `models_v2.py`.
 
-- Models
-  - `deit_small_patch8_LS`
-  - `deit_base_patch8_LS`
+- Baseline models with RPE variants
+  - `vit_ape`
+  - `vit_ape_reg_rpe`
+  - `vit_ape_poly_rpe`
+  - `vit_ape_axial_rope`
+  - `vit_ape_mixed_rope`
 
 RoPE ViT is implemented in `models_v2_rope.py`.
 
