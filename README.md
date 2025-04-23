@@ -1,6 +1,9 @@
 # VisionTransformers
 Repository for Columbia University course projects IEOR 6617 and IEOR 4540
 
+# Report in Overleaf
+[Report](https://www.overleaf.com/project/68093a8cf2cf98a61326477e)
+
 # IEOR 4540 Project Description
 <img width="609" alt="image" src="https://github.com/user-attachments/assets/50d5cdcc-8a60-41f1-a362-908250fc1390" />
 
