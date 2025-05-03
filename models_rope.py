@@ -15,7 +15,7 @@ from timm.models.vision_transformer import Mlp, PatchEmbed , _cfg
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from timm.models.registry import register_model
 
-from models_v2 import vit_models, Layer_scale_init_Block, Attention
+from models import vit_models, Layer_scale_init_Block, Attention
 
 def init_random_2d_freqs(dim: int, num_heads: int, theta: float = 10.0, rotate: bool = True):
     freqs_x = []
@@ -209,80 +209,7 @@ class rope_vit_models(vit_models):
         
         return x
 
-# RoPE-Axial
-@register_model
-def rope_axial_deit_small_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=100.0, rope_mixed=False, **kwargs)
-    model.default_cfg = _cfg()
-    return model
-
-@register_model
-def rope_axial_deit_base_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=100.0, rope_mixed=False, **kwargs)
-    return model
-
-# RoPE-Mixed
-@register_model
-def rope_mixed_deit_small_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=10.0, rope_mixed=True, **kwargs)
-    model.default_cfg = _cfg()
-    return model
-
-@register_model
-def rope_mixed_deit_base_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=10.0, rope_mixed=True, **kwargs)
-    return model
-
-# RoPE-Axial + APE
-@register_model
-def rope_axial_ape_deit_small_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=100.0, rope_mixed=False, use_ape=True, **kwargs)
-    model.default_cfg = _cfg()
-    return model
-
-@register_model
-def rope_axial_ape_deit_base_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=100.0, rope_mixed=False, use_ape=True, **kwargs)
-    return model
-
-# RoPE-Mixed + APE
-@register_model
-def rope_mixed_ape_deit_small_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=10.0, rope_mixed=True, use_ape=True, **kwargs)
-    model.default_cfg = _cfg()
-    return model
-
-@register_model
-def rope_mixed_ape_deit_base_patch8_LS(pretrained=False, img_size=224, pretrained_21k = False,  **kwargs):
-    model = rope_vit_models(
-        img_size = img_size, patch_size=8, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6),block_layers=RoPE_Layer_scale_init_Block, Attention_block=RoPEAttention,
-        rope_theta=10.0, rope_mixed=True, use_ape=True, **kwargs)
-    return model
-
-# New models
-@register_model
+@register_model  # ViT model with APE and axial RoPE
 def vit_ape_axial_rope(img_size=32, **kwargs):
     model = rope_vit_models(
         img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
@@ -290,7 +217,7 @@ def vit_ape_axial_rope(img_size=32, **kwargs):
         rope_theta=100.0, rope_mixed=False, use_ape=True, **kwargs)
     return model
 
-@register_model
+@register_model  # ViT model with APE and mixed RoPE
 def vit_ape_mixed_rope(img_size=32, **kwargs):
     model = rope_vit_models(
         img_size = img_size, patch_size=4, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
