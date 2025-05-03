@@ -32,20 +32,6 @@ import utils
 import warnings
 warnings.filterwarnings("ignore", "Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.")
 
-def hf_checkpoint_load(model_name):
-    try:
-        from huggingface_hub import hf_hub_download
-
-        ckpt_path = hf_hub_download(
-            repo_id="naver-ai/" + model_name, filename= "pytorch_model.bin"
-        )
-        checkpoint = torch.load(ckpt_path)
-    except:
-        _HF_URL = "https://huggingface.co/naver-ai/" + model_name + "/resolve/main/pytorch_model.bin"
-        checkpoint = torch.hub.load_state_dict_from_url(_HF_URL)
-        
-    return checkpoint
-
 def get_args_parser():
     parser = argparse.ArgumentParser('DeiT training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
@@ -289,10 +275,7 @@ def main(args):
 
                     
     if args.finetune:
-        if args.finetune == 'huggingface':
-            checkpoint = hf_checkpoint_load(args.model)
-        else:
-            checkpoint = torch.load(args.finetune, map_location='cpu')
+        checkpoint = torch.load(args.finetune, map_location='cpu')
         checkpoint_model = checkpoint['model']
         
         state_dict = model.state_dict()
