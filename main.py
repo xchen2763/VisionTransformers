@@ -17,16 +17,16 @@ from timm.scheduler import create_scheduler
 from timm.optim import create_optimizer
 from timm.utils import NativeScaler, get_state_dict, ModelEma
 
-from datasets import build_dataset
-from engine import train_one_epoch, evaluate
-from losses import DistillationLoss
-from samplers import RASampler
-from augment import new_data_aug_generator
+from vit_utils.datasets import build_dataset
+from vit_utils.engine import train_one_epoch, evaluate
+from vit_utils.losses import DistillationLoss
+from vit_utils.samplers import RASampler
+from vit_utils.augment import new_data_aug_generator
 
-import models
-import models_rope
+from vit_utils import models
+from vit_utils import models_rope
 
-import utils
+from vit_utils import utils
 
 
 import warnings

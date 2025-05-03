@@ -15,7 +15,7 @@ from timm.models.vision_transformer import Mlp, PatchEmbed , _cfg
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from timm.models.registry import register_model
 
-from models import vit_models, Layer_scale_init_Block, Attention
+from vit_utils.models import vit_models, Layer_scale_init_Block, Attention
 
 def init_random_2d_freqs(dim: int, num_heads: int, theta: float = 10.0, rotate: bool = True):
     freqs_x = []

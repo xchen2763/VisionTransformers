@@ -12,8 +12,8 @@ import torch
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
 
-from losses import DistillationLoss
-import utils
+from vit_utils.losses import DistillationLoss
+from vit_utils import utils
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
