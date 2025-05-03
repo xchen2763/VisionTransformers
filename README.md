@@ -1,56 +1,29 @@
-# VisionTransformers
-Repository for Columbia University course projects IEOR 6617 and IEOR 4540
+# VisionTransformers (ViT)
 
-# Report in Overleaf
-[Report](https://www.overleaf.com/project/68093a8cf2cf98a61326477e)
+ViTs with absolute positional encoding (APE) and relative positional encoding (RPE) are implemented in [models.py](vit_utils/models.py). ViTs with rotary positional encoding (RoPE) are implemented in [models_rope.py](vit_utils/models_rope.py).
 
-# IEOR 4540 Project Description
-<img width="609" alt="image" src="https://github.com/user-attachments/assets/50d5cdcc-8a60-41f1-a362-908250fc1390" />
-
-# Rotary Positional Encodings for ViT and Performer -- code
-
-This folder is RoPE-ViT-Performer training code based on [RoPE](https://github.com/naver-ai/rope-vit)
-and [Performer](https://github.com/google-research/google-research/tree/master/performer) codebase.
-
-Regular ViT with absolute positional embedding (APE) is implemented in `models_v2.py`.
-
-- Baseline models with RPE variants
+Baseline models with APE, RPE and RoPE variants:
   - `vit_ape`
   - `vit_ape_reg_rpe`
   - `vit_ape_poly_rpe`
   - `vit_ape_axial_rope`
   - `vit_ape_mixed_rope`
 
-RoPE ViT is implemented in `models_v2_rope.py`.
+## Installation
+An environment with Python 3.8 or higher version is required, as well as `pip` package.
 
-- Models
-  - `rope_axial_deit_small_patch8_LS`
-  - `rope_axial_deit_base_patch8_LS`
-  - `rope_mixed_deit_small_patch8_LS`
-  - `rope_mixed_deit_base_patch8_LS`
-  - `rope_axial_ape_deit_small_patch8_LS`
-  - `rope_axial_ape_deit_base_patch8_LS`
-  - `rope_mixed_ape_deit_small_patch8_LS`
-  - `rope_mixed_ape_deit_base_patch8_LS`
+```
+git clone https://github.com/xchen2763/VisionTransformers
 
-ViT with APE and Performer mechanism is implemented in `models_v2_performer.py`.
+cd VisionTransformers
 
-- Models
-  - `performer_small_patch8_LS`
-  - `performer_base_patch8_LS`
+pip install -r requirements.txt
+```
 
-ViT with RoPE and Performer mechanism is implemented in `models_v2_performer_rope.py`
+Note that a `torch` and `torchvision` version different from `requirements.txt` might be required, which depends on the `CUDA Toolkit` version of your environment.
 
-- Models
-  - `performer_rope_axial_small_LS`
-  - `performer_rope_axial_base_LS`
-  - `performer_rope_mixed_small_LS`
-  - `performer_rope_mixed_base_LS`
-  - `performer_rope_axial_ape_small_LS`
-  - `performer_rope_axial_ape_base_LS`
-  - `performer_rope_mixed_ape_small_LS`
-  - `performer_rope_mixed_ape_base_LS`
+## Quickstart
+Run [run_cifar10.sh](./run_cifar10.sh) for training and testing ViT models with different APE and RPE variants on CIFAR-10 dataset. Run [run_mnist.sh](./run_mnist.sh) for training and testing models on MNIST dataset.
 
 ## Reference
-This project uses code from `rope-vit`, licensed under the Apache License 2.0.
-See https://github.com/naver-ai/rope-vit.
+This project uses code from [rope-vit](https://github.com/naver-ai/rope-vit), licensed under the Apache License 2.0.
